@@ -13,19 +13,19 @@
    MODULE_DESCRIPTION("Character driver generation random number");  
    MODULE_LICENSE("GPL");            
 
-   static int major;                  
+   static int major;
+   int number;
+   char messageResult[255];               
    static struct class* genCharClass; 
    static struct device* genCharDevice; 
 
    static int onOpen(struct inode *, struct file *);
-   static int onRelease(struct inode *, struct file *);
    static ssize_t onRead(struct file *, char *, size_t, loff_t *);
 
    static struct file_operations fops =
    {
       .open = onOpen,
       .read = onRead,
-      .release = onRelease,
    };
 
    static int __init genRandNumberInit(void){
@@ -73,14 +73,10 @@
 
    static ssize_t onRead(struct file *f, char *buf, size_t len, loff_t *off){
       printk(KERN_INFO "Device: on Read\n");
-
-      int number;
       get_random_bytes(&number, sizeof(number));
-      
-      char bien[255];
-      sprintf(bien, "%d", number);
+      sprintf(messageResult, "%d", number);
 
-      if (copy_to_user(buf, bien, 255)!=0){
+      if (copy_to_user(buf, messageResult, 255)!=0){
          printk(KERN_INFO "Could not send to user\n");
          return -EFAULT;  
       }
@@ -88,10 +84,6 @@
          printk(KERN_INFO "Sent number: %d to user\n", number);
          return 0; 
       }
-   }
-   static int onRelease(struct inode *i, struct file *f){
-      printk(KERN_INFO "Device: on Release\n");
-      return 0;
    }
 
    module_init(genRandNumberInit);
