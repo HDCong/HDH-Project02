@@ -7,11 +7,7 @@
    #include <linux/uaccess.h>
             
    #define  DEVICE_NAME "project02"    
-   #define  CLASS_NAME  "chardriv"   
-
-   MODULE_AUTHOR("1712273 - 1712304");
-   MODULE_DESCRIPTION("Character driver generation random number");  
-   MODULE_LICENSE("GPL");            
+   #define  CLASS_NAME  "chardriv"               
 
    static int major;
    int number;
@@ -88,3 +84,6 @@
 
    module_init(genRandNumberInit);
    module_exit(genRandNumberExit);
+   MODULE_LICENSE("GPL");
+   MODULE_AUTHOR("1712273 - 1712304");
+   MODULE_DESCRIPTION("Character device driver generation random number");  

@@ -1,5 +1,5 @@
-KDIR = /lib/modules/`uname -r`/build
+obj-m += generateNumber.o
 all:
-	make -C $(KDIR) M=`pwd`
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 clean:
-	make -C $(KDIR) M=`pwd` clean
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
