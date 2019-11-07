@@ -9,15 +9,29 @@
    #define  DEVICE_NAME "project02"    
    #define  CLASS_NAME  "chardriv"               
 
-   static int major;
-   int number;
-   char messageResult[255];               
+   static int major;    
    static struct class* genCharClass; 
-   static struct device* genCharDevice; 
+   static int onOpen(struct inode *i, struct file *f){
+      printk(KERN_INFO "Device: on Open\n");
+      return 0;
+   }
 
-   static int onOpen(struct inode *, struct file *);
-   static ssize_t onRead(struct file *, char *, size_t, loff_t *);
+   static ssize_t onRead(struct file *f, char *buf, size_t len, loff_t *off){
+      printk(KERN_INFO "Device: on Read\n");
+      int number;
+      char messageResult[255]; 
+      get_random_bytes(&number, sizeof(number));
+      sprintf(messageResult, "%d", number);
 
+      if (copy_to_user(buf, messageResult, 255)!=0){
+         printk(KERN_ERR "Could not send to user\n");
+         return -EFAULT;  
+      }
+      else {
+         printk(KERN_INFO "Sent number: %d to user\n", number);
+         return 0; 
+      }
+   }
    static struct file_operations fops =
    {
       .open = onOpen,
@@ -29,26 +43,24 @@
 
       major = register_chrdev(0, DEVICE_NAME, &fops);
       if (major<0){
-         printk(KERN_ALERT "Register major number failed\n");
+         printk(KERN_ERR "Register major number failed\n");
          return major;
       }
-      printk(KERN_INFO "Major number is: %d\n", major);
+      printk(KERN_INFO "Major number: %d\n", major);
       // Create class
-      genCharClass = class_create(THIS_MODULE, CLASS_NAME);
-      if (IS_ERR(genCharClass)){               
+      if ((genCharClass = class_create(THIS_MODULE, CLASS_NAME))==NULL){               
          unregister_chrdev(major, DEVICE_NAME);
-         printk(KERN_ALERT "Register device class failed\n");
-         return PTR_ERR(genCharClass);          
+         printk(KERN_ERR "Register device class failed\n");
+         return -1;          
       }
       printk(KERN_INFO "Register device class successfully \n");
 
       // Create device
-      genCharDevice = device_create(genCharClass, NULL, MKDEV(major, 0), NULL, DEVICE_NAME);
-      if (IS_ERR(genCharDevice)){               
+      if (  device_create(genCharClass, NULL, MKDEV(major, 0), NULL, DEVICE_NAME)==NULL){               
          class_destroy(genCharClass);          
          unregister_chrdev(major, DEVICE_NAME);
-         printk(KERN_ALERT "Create device failed\n");
-         return PTR_ERR(genCharDevice);
+         printk(KERN_ERR "Create device failed\n");
+         return -1;
       }
       printk(KERN_INFO "Created device successfully\n"); 
       return 0;
@@ -62,25 +74,6 @@
       printk(KERN_INFO "Exit generation random number\n");
    }
 
-   static int onOpen(struct inode *i, struct file *f){
-      printk(KERN_INFO "Device: on Open\n");
-      return 0;
-   }
-
-   static ssize_t onRead(struct file *f, char *buf, size_t len, loff_t *off){
-      printk(KERN_INFO "Device: on Read\n");
-      get_random_bytes(&number, sizeof(number));
-      sprintf(messageResult, "%d", number);
-
-      if (copy_to_user(buf, messageResult, 255)!=0){
-         printk(KERN_INFO "Could not send to user\n");
-         return -EFAULT;  
-      }
-      else {
-         printk(KERN_INFO "Sent number: %d to user\n", number);
-         return 0; 
-      }
-   }
 
    module_init(genRandNumberInit);
    module_exit(genRandNumberExit);
